@@ -1,0 +1,63 @@
+use std::{fmt, io, path::PathBuf};
+
+#[derive(Debug)]
+pub enum BigFileError {
+    Io {
+        file: Option<PathBuf>,
+        offset: Option<usize>,
+        err: io::Error,
+    },
+    EntryNotFound(PathBuf),
+}
+
+impl fmt::Display for BigFileError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        return match self {
+            BigFileError::Io { file, offset, err } => {
+                if let Some(file) = file {
+                    write!(f, "{}", file.display())?;
+                }
+
+                if let Some(offset) = offset {
+                    write!(f, " at offset {offset}")?;
+                }
+
+                write!(f, ": {}", err)
+            }
+            BigFileError::EntryNotFound(p) => write!(f, "Couldn't find the entry {}", p.display()),
+        };
+    }
+}
+
+impl From<io::Error> for BigFileError {
+    fn from(value: io::Error) -> Self {
+        BigFileError::Io {
+            file: None,
+            err: value,
+            offset: None,
+        }
+    }
+}
+
+pub(crate) trait IoResultExt<T> {
+    fn with_file(self, file: PathBuf) -> Result<T, BigFileError>;
+    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T, BigFileError>;
+}
+
+impl<T> IoResultExt<T> for io::Result<T> {
+    fn with_file(self, file: PathBuf) -> Result<T, BigFileError> {
+        self.map_err(|e| BigFileError::Io {
+            file: Some(file),
+            err: e,
+            offset: None,
+        })
+    }
+
+    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T, BigFileError> {
+        self.map_err(|e| BigFileError::Io {
+            file: file,
+            err: e,
+            offset: offset,
+        })
+    }
+}
