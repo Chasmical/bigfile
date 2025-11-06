@@ -1,3 +1,8 @@
+mod bfdb;
+mod bfn;
+pub mod error;
+mod reader;
+
 use std::{
     collections::HashMap,
     fs,
@@ -11,11 +16,6 @@ use crate::{
     error::{BigFileError, IoResultExt},
     reader::BigFileReader,
 };
-
-mod bfdb;
-mod bfn;
-mod error;
-mod reader;
 
 pub struct Entry {
     offset: u64,
