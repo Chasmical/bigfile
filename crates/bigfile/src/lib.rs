@@ -142,16 +142,59 @@ impl BigFile {
         reader: &mut BigFileReader<impl Read + Seek>,
     ) -> Result<()> {
         for (path, entry) in &self.entries {
-            let mut data = vec![0; entry.size as _];
-
-            reader.seek(SeekFrom::Start(entry.offset))?;
-            reader.read_exact(&mut data)?;
-
-            let path = std::env::current_dir()?.join(&output_path).join(&path);
-
-            fs::create_dir_all(path.parent().unwrap())?;
-            fs::write(&path, data).with_file(path)?;
+            self.extract_entry(reader, &output_path, &path, &entry)?;
         }
+
         Ok(())
+    }
+
+    fn extract_entry(
+        &self,
+        reader: &mut BigFileReader<impl Read + Seek>,
+        output_path: &PathBuf,
+        path: &PathBuf,
+        entry: &Entry,
+    ) -> Result<()> {
+        let mut data = vec![0; entry.size as _];
+
+        reader.seek(SeekFrom::Start(entry.offset))?;
+        reader.read_exact(&mut data)?;
+
+        let path = std::env::current_dir()?.join(output_path).join(path);
+
+        fs::create_dir_all(path.parent().unwrap())?;
+        fs::write(&path, data).with_file(path)?;
+
+        Ok(())
+    }
+
+    pub fn extract_lossy(&self, output_path: PathBuf) -> Result<usize> {
+        match &self.bfdata {
+            DataSource::File(path_buf) => {
+                let mut reader = BigFileReader::from_path(path_buf.clone())?;
+                return Ok(self.extract_lossy_inner(output_path, &mut reader));
+            }
+            DataSource::Buffer(cursor) => {
+                let mut reader = BigFileReader::new(cursor.clone());
+                return Ok(self.extract_lossy_inner(output_path, &mut reader));
+            }
+        };
+    }
+
+    fn extract_lossy_inner(
+        &self,
+        output_path: PathBuf,
+        reader: &mut BigFileReader<impl Read + Seek>,
+    ) -> usize {
+        let mut extracted = 0;
+
+        for (path, entry) in &self.entries {
+            let extracted_entry = self.extract_entry(reader, &output_path, &path, &entry);
+            if extracted_entry.is_ok() {
+                extracted += 1
+            }
+        }
+
+        extracted
     }
 }
