@@ -3,7 +3,7 @@ use std::{
     io::{Read, Seek},
 };
 
-use crate::{error::BigFileError, reader::BigFileReader};
+use crate::{error::Result, reader::BigFileReader};
 
 #[derive(Clone, Copy)]
 pub(crate) struct Entry {
@@ -16,7 +16,7 @@ pub(crate) struct Bfdb {
 }
 
 impl Bfdb {
-    pub(crate) fn from(reader: &mut BigFileReader<impl Read + Seek>) -> Result<Self, BigFileError> {
+    pub(crate) fn from(reader: &mut BigFileReader<impl Read + Seek>) -> Result<Self> {
         let len = reader.read_u32_le()?;
         let mut entries = HashMap::with_capacity(len as _);
 

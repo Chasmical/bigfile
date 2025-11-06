@@ -13,9 +13,18 @@ use std::{
 use crate::{
     bfdb::Bfdb,
     bfn::Bfn,
-    error::{BigFileError, IoResultExt},
+    error::{BigFileError, IoResultExt, Result},
     reader::BigFileReader,
 };
+
+fn fnv1a(string: &str) -> u64 {
+    let mut hash: u64 = 0xCBF29CE484222325;
+    for char in string.chars() {
+        hash ^= char as u64;
+        hash = hash.wrapping_mul(0x100000001B3);
+    }
+    hash
+}
 
 pub struct Entry {
     offset: u64,
@@ -37,11 +46,7 @@ impl BigFile {
         &self.entries
     }
 
-    pub fn from_paths(
-        bfn_path: PathBuf,
-        bfdb_path: PathBuf,
-        bfdata_path: PathBuf,
-    ) -> Result<Self, BigFileError> {
+    pub fn from_paths(bfn_path: PathBuf, bfdb_path: PathBuf, bfdata_path: PathBuf) -> Result<Self> {
         let mut reader = BigFileReader::from_path(bfn_path)?;
         let bfn = Bfn::from(&mut reader)?;
 
@@ -51,9 +56,12 @@ impl BigFile {
         BigFile::from(bfn, bfdb, DataSource::File(bfdata_path))
     }
 
-    fn from(bfn: Bfn, bfdb: Bfdb, bfdata: DataSource) -> Result<Self, BigFileError> {
+    fn from(bfn: Bfn, bfdb: Bfdb, bfdata: DataSource) -> Result<Self> {
         let mut entries = HashMap::with_capacity(bfn.files.len());
         for path in bfn.files {
+            // The path passed to the hashing function should be lowercase,
+            // should replace all backslashes with normal slashes,
+            // and should not include the root directory (hence the [2..])
             let hash = fnv1a(&path.to_str().unwrap().replace('\\', "/").to_lowercase()[2..]);
 
             let entry = bfdb.entries[&hash];
@@ -73,12 +81,13 @@ impl BigFile {
         bfn_reader: &mut R,
         bfdb_reader: &mut R,
         bfdata_reader: &mut R,
-    ) -> Result<Self, BigFileError> {
+    ) -> Result<Self> {
         let mut bfn = BigFileReader::new(bfn_reader);
         let mut bfdb = BigFileReader::new(bfdb_reader);
+        let mut bfdata = BigFileReader::new(bfdata_reader);
 
         let mut buf = Vec::new();
-        bfdata_reader.read_to_end(&mut buf)?;
+        bfdata.read_to_end(&mut buf)?;
         let cursor = Cursor::new(buf);
 
         BigFile::from(
@@ -88,7 +97,7 @@ impl BigFile {
         )
     }
 
-    pub fn get(&self, file: &PathBuf) -> Result<Vec<u8>, BigFileError> {
+    pub fn get(&self, file: &PathBuf) -> Result<Vec<u8>> {
         let entry = match self.entries.get(file) {
             Some(v) => v,
             None => return Err(BigFileError::EntryNotFound(file.clone())),
@@ -114,7 +123,7 @@ impl BigFile {
         Ok(data)
     }
 
-    pub fn extract(&self, output_path: PathBuf) -> Result<(), BigFileError> {
+    pub fn extract(&self, output_path: PathBuf) -> Result<()> {
         match &self.bfdata {
             DataSource::File(path_buf) => {
                 let mut reader = BigFileReader::from_path(path_buf.clone())?;
@@ -131,30 +140,18 @@ impl BigFile {
         &self,
         output_path: PathBuf,
         reader: &mut BigFileReader<impl Read + Seek>,
-    ) -> Result<(), BigFileError> {
+    ) -> Result<()> {
         for (path, entry) in &self.entries {
             let mut data = vec![0; entry.size as _];
 
             reader.seek(SeekFrom::Start(entry.offset))?;
             reader.read_exact(&mut data)?;
 
-            let path = std::env::current_dir()
-                .expect("Failed to get current directory")
-                .join(&output_path)
-                .join(&path);
+            let path = std::env::current_dir()?.join(&output_path).join(&path);
 
             fs::create_dir_all(path.parent().unwrap())?;
             fs::write(&path, data).with_file(path)?;
         }
         Ok(())
     }
-}
-
-fn fnv1a(string: &str) -> u64 {
-    let mut hash: u64 = 0xCBF29CE484222325;
-    for char in string.chars() {
-        hash ^= char as u64;
-        hash = hash.wrapping_mul(0x100000001B3);
-    }
-    hash
 }

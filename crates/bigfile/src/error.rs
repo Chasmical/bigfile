@@ -10,6 +10,8 @@ pub enum BigFileError {
     EntryNotFound(PathBuf),
 }
 
+pub type Result<T> = core::result::Result<T, BigFileError>;
+
 impl fmt::Display for BigFileError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         return match self {
@@ -63,16 +65,16 @@ impl IoErrorExt for io::Error {
 }
 
 pub(crate) trait IoResultExt<T> {
-    fn with_file(self, file: PathBuf) -> Result<T, BigFileError>;
-    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T, BigFileError>;
+    fn with_file(self, file: PathBuf) -> Result<T>;
+    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T>;
 }
 
 impl<T> IoResultExt<T> for io::Result<T> {
-    fn with_file(self, file: PathBuf) -> Result<T, BigFileError> {
+    fn with_file(self, file: PathBuf) -> Result<T> {
         self.map_err(|e| e.with_file(file))
     }
 
-    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T, BigFileError> {
+    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T> {
         self.map_err(|e| e.with_offset(file, offset))
     }
 }

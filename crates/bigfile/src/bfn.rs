@@ -1,4 +1,4 @@
-use crate::{error::BigFileError, reader::BigFileReader};
+use crate::{error::Result, reader::BigFileReader};
 use std::{
     io::{Read, Seek},
     path::PathBuf,
@@ -9,14 +9,14 @@ pub(crate) struct Bfn {
 }
 
 impl Bfn {
-    pub(crate) fn from(reader: &mut BigFileReader<impl Read + Seek>) -> Result<Self, BigFileError> {
+    pub(crate) fn from(reader: &mut BigFileReader<impl Read + Seek>) -> Result<Self> {
         let mut files = Vec::new();
 
         fn read_dir(
             reader: &mut BigFileReader<impl Read + Seek>,
             parent: &PathBuf,
             out: &mut Vec<PathBuf>,
-        ) -> Result<(), BigFileError> {
+        ) -> Result<()> {
             let name_len = reader.read_u32_le()?;
             let name = reader.read_string(name_len as _)?;
             let mut cur_path = parent.clone();
