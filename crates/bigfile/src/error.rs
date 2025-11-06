@@ -39,6 +39,29 @@ impl From<io::Error> for BigFileError {
     }
 }
 
+pub(crate) trait IoErrorExt {
+    fn with_file(self, file: PathBuf) -> BigFileError;
+    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> BigFileError;
+}
+
+impl IoErrorExt for io::Error {
+    fn with_file(self, file: PathBuf) -> BigFileError {
+        BigFileError::Io {
+            file: Some(file),
+            offset: None,
+            err: self,
+        }
+    }
+
+    fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> BigFileError {
+        BigFileError::Io {
+            file,
+            offset,
+            err: self,
+        }
+    }
+}
+
 pub(crate) trait IoResultExt<T> {
     fn with_file(self, file: PathBuf) -> Result<T, BigFileError>;
     fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T, BigFileError>;
@@ -46,18 +69,10 @@ pub(crate) trait IoResultExt<T> {
 
 impl<T> IoResultExt<T> for io::Result<T> {
     fn with_file(self, file: PathBuf) -> Result<T, BigFileError> {
-        self.map_err(|e| BigFileError::Io {
-            file: Some(file),
-            err: e,
-            offset: None,
-        })
+        self.map_err(|e| e.with_file(file))
     }
 
     fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> Result<T, BigFileError> {
-        self.map_err(|e| BigFileError::Io {
-            file: file,
-            err: e,
-            offset: offset,
-        })
+        self.map_err(|e| e.with_offset(file, offset))
     }
 }
