@@ -8,6 +8,7 @@ pub enum BigFileError {
         err: io::Error,
     },
     EntryNotFound(PathBuf),
+    HashEntryNotFound(u64),
 }
 
 pub type Result<T> = core::result::Result<T, BigFileError>;
@@ -27,6 +28,9 @@ impl fmt::Display for BigFileError {
                 write!(f, ": {}", err)
             }
             BigFileError::EntryNotFound(p) => write!(f, "Couldn't find the entry {}", p.display()),
+            BigFileError::HashEntryNotFound(hash) => {
+                write!(f, "Couldn't find an entry for hash {hash:X}")
+            }
         };
     }
 }

@@ -65,7 +65,11 @@ impl BigFile {
             // and should not include the root directory (hence the [2..])
             let hash = fnv1a(&path.to_str().unwrap().replace('\\', "/").to_lowercase()[2..]);
 
-            let entry = bfdb.entries[&hash];
+            let entry = match bfdb.entries.get(&hash) {
+                Some(v) => v,
+                None => return Err(BigFileError::HashEntryNotFound(hash)),
+            };
+
             entries.insert(
                 path,
                 Entry {
