@@ -10,10 +10,11 @@ use std::{
     path::PathBuf,
 };
 
+pub use crate::error::Result;
 use crate::{
     bfdb::Bfdb,
     bfn::Bfn,
-    error::{BigFileError, IoResultExt, Result},
+    error::{BigFileError, IoResultExt},
     reader::BigFileReader,
 };
 
@@ -46,14 +47,14 @@ impl BigFile {
         &self.entries
     }
 
-    pub fn from_paths(bfn_path: PathBuf, bfdb_path: PathBuf, bfdata_path: PathBuf) -> Result<Self> {
+    pub fn from_paths(bfn_path: PathBuf, bfdb_path: PathBuf, bfdata: DataSource) -> Result<Self> {
         let mut reader = BigFileReader::from_path(bfn_path)?;
         let bfn = Bfn::from(&mut reader)?;
 
         let mut reader = BigFileReader::from_path(bfdb_path)?;
         let bfdb = Bfdb::from(&mut reader)?;
 
-        BigFile::from(bfn, bfdb, DataSource::File(bfdata_path))
+        BigFile::from(bfn, bfdb, bfdata)
     }
 
     fn from(bfn: Bfn, bfdb: Bfdb, bfdata: DataSource) -> Result<Self> {
