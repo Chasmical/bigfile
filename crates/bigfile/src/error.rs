@@ -41,6 +41,8 @@ impl From<io::Error> for BigFileError {
     }
 }
 
+impl std::error::Error for BigFileError {}
+
 pub(crate) trait IoErrorExt {
     fn with_file(self, file: PathBuf) -> BigFileError;
     fn with_offset(self, file: Option<PathBuf>, offset: Option<usize>) -> BigFileError;
