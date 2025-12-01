@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use bigfile::{BigFile, DataSource, error::BigFileError};
 use eframe::egui::{
     self, Align, Button, Context, Id, ImageSource, InnerResponse, Key, KeyboardShortcut, Layout,
