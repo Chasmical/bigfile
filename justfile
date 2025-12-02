@@ -57,4 +57,5 @@ _bundle-macos:
 _bundle-windows:
     cargo build --release
 
+    @mkdir build -Force > $null
     @copy target/release/bigfile-gui.exe build/bigfile.exe -Force
