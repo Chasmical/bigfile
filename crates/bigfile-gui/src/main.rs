@@ -2,8 +2,8 @@
 
 use bigfile::{BigFile, DataSource, error::BigFileError};
 use eframe::egui::{
-    self, Align, Button, Context, Id, ImageSource, InnerResponse, Key, KeyboardShortcut, Layout,
-    Modal, ModalResponse, Modifiers, TextWrapMode, Ui, Widget,
+    self, Align, Button, Context, IconData, Id, ImageSource, InnerResponse, Key, KeyboardShortcut,
+    Layout, Modal, ModalResponse, Modifiers, TextWrapMode, Ui, Widget,
 };
 use rfd::FileDialog;
 use std::{
@@ -585,7 +585,9 @@ impl eframe::App for App {
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([1280.0, 720.0]),
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([1280.0, 720.0])
+            .with_icon(IconData::default()),
         ..Default::default()
     };
 
