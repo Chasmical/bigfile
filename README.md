@@ -10,4 +10,14 @@
 3. Extract selected files or extract all the files
 
 ## Building
-To build both the lib and the app, simply clone the repo and run `cargo build`
+This project uses [Just](https://just.systems) to run building and bundling commands.
+
+- `just` — runs the app (does `just run` under the hood)
+- `just run` — builds and runs the app with optional parameters
+- `just build` — builds the lib and the app with optional parameters
+- `just bundle` — bundles the release version of the app. On Windows, it just moves the executable file to `build/`. On macOS, it also makes it an app bundle with icons
+
+Alternatively you can just use `cargo` for building and running.
+
+## Attributions
+- [Twemoji](https://github.com/twitter/twemoji) by Twitter, licensed under CC-BY 4.0. See [assets/ATTRIBUTION](assets/ATTRIBUTION)
