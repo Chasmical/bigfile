@@ -220,8 +220,8 @@ impl App {
 
     fn add_bigfile(&mut self) {
         if let Some(bfn_path) = open_bigfile_dialog("bfn")
-            && let Some(bfdb_path) = open_bigfile_dialog("bfdb")
-            && let Some(bfdata_path) = open_bigfile_dialog("bfdata")
+            && let Some(bfdb_path) = auto_open_or_dialog(&bfn_path, "bfdb")
+            && let Some(bfdata_path) = auto_open_or_dialog(&bfn_path, "bfdata")
         {
             let text = if let Ok(metadata) = fs::metadata(&bfdata_path) {
                 let mb = metadata.len() / 1024 / 1024;
@@ -541,6 +541,16 @@ fn open_extract_dialog() -> Option<PathBuf> {
     FileDialog::new()
         .set_title("Select extract directory")
         .pick_folder()
+}
+
+fn auto_open_or_dialog(bfn_path: &Path, ext: &str) -> Option<PathBuf> {
+    let path = bfn_path.with_extension(ext);
+
+    if fs::exists(&path).unwrap_or(false) {
+        Some(path)
+    } else {
+        open_bigfile_dialog(ext)
+    }
 }
 
 fn open_bigfile_dialog(extension: &str) -> Option<PathBuf> {
